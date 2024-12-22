@@ -28,7 +28,14 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const volunteerCollection = client.db("volunteerManagement").collection('volunteer');
     
+    // volunteer added post
+    app.post('/volunteers', async(req, res)=>{
+        const volunteerData = req.body;
+        const result = await volunteerCollection.insertOne(volunteerData);
+        res.send(result);
+    })
 
 
 
