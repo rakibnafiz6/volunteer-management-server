@@ -38,6 +38,13 @@ async function run() {
         res.send(result);
     })
 
+    // volunteer needs now
+    app.get('/volunteer-need', async(req, res)=>{
+        const cursor = volunteerCollection.find().sort({deadline: 1}).limit(6);
+        const result = await cursor.toArray();
+        res.send(result);
+    })
+
     // volunteer added post
     app.post('/volunteers', async(req, res)=>{
         const volunteerData = req.body;
