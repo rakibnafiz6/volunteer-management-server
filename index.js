@@ -30,6 +30,14 @@ async function run() {
 
     const volunteerCollection = client.db("volunteerManagement").collection('volunteer');
     
+    // all volunteer needs get method
+    app.get('/volunteers', async(req, res)=>{
+        const query = req.query.search;
+        const cursor = volunteerCollection.find({title: {$regex: query, $options: 'i'}});
+        const result = await cursor.toArray();
+        res.send(result);
+    })
+
     // volunteer added post
     app.post('/volunteers', async(req, res)=>{
         const volunteerData = req.body;
