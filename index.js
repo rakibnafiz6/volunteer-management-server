@@ -53,10 +53,47 @@ async function run() {
         res.send(result);
     })
 
+    // manage my volunteer post
+    app.get('/manage-my-post/:email', async(req, res)=>{
+        const email = req.params.email;
+        const query = {email};
+        const result = await volunteerCollection.find(query).toArray();
+        res.send(result);
+    })
+
+    // get data with update volunteer post
+    app.get('/update-volunteer/:id', async(req, res)=>{
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const result = await volunteerCollection.findOne(query)
+        res.send(result);
+    })
+
     // volunteer added post
     app.post('/volunteers', async(req, res)=>{
         const volunteerData = req.body;
         const result = await volunteerCollection.insertOne(volunteerData);
+        res.send(result);
+    })
+
+    // update volunteer post
+    app.put('/updatePost/:id', async(req, res)=>{
+        const id = req.params.id;
+        const filter = {_id: new ObjectId(id)};
+        const options = { upsert: true };
+        const updateVolunteer = req.body;
+        const updatePost = {
+            $set: {
+                thumbnail: updateVolunteer.thumbnail,
+                title: updateVolunteer.title,
+                description: updateVolunteer.description,
+                category: updateVolunteer.category,
+                location: updateVolunteer.location,
+                volunteer: updateVolunteer.volunteer,
+                deadline: updateVolunteer.deadline,
+            }
+        }
+        const result = await volunteerCollection.updateOne(filter, updatePost, options);
         res.send(result);
     })
 
