@@ -1,14 +1,36 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
 
 // middleware
-app.use(cors());
+app.use(cors({
+   origin: ['http://localhost:5173'],
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+const verifyToken = (req, res, next)=>{
+    const token = req.cookies?.token;
+    if(!token){
+        return res.status(401).send({message: 'Unauthorized: No token provided'});
+    }
+
+    jwt.verify(token, process.env.DB_SECRET, (err, decoded)=>{
+        if(err){
+            return res.status(401).send({message: 'Unauthorized: No token provided'});
+        }
+        req.user = decoded;
+        next();
+    })
+
+}
 
 
 
@@ -31,6 +53,33 @@ async function run() {
     const volunteerCollection = client.db("volunteerManagement").collection('volunteer');
 
     const requestCollection = client.db("volunteerManagement").collection('request');
+
+    // create jwt token
+    app.post('/jwt', (req, res)=>{
+        const user = req.body;
+        const token = jwt.sign(user, process.env.DB_SECRET, {expiresIn: '2d'} )
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: false
+        })
+        .send({success: true});
+    })
+
+    // remove jwt token
+    app.post('/logout', (req, res)=>{
+    
+        res.clearCookie('token', {
+            httpOnly: true,
+            secure: false
+        })
+        .send({success: true});
+    })
+
+
+
+
+
     
     // all volunteer needs get method
     app.get('/volunteers', async(req, res)=>{
@@ -48,7 +97,7 @@ async function run() {
     })
 
     // volunteer details
-    app.get('/volunteer-details/:id', async(req, res)=>{
+    app.get('/volunteer-details/:id', verifyToken, async(req, res)=>{
         const id = req.params.id;
         const query = {_id: new ObjectId(id)}
         const result = await volunteerCollection.findOne(query)
@@ -56,9 +105,12 @@ async function run() {
     })
 
     // manage my volunteer post
-    app.get('/manage-my-post/:email', async(req, res)=>{
+    app.get('/manage-my-post/:email', verifyToken, async(req, res)=>{
         const email = req.params.email;
         const query = {organizer_email: email};
+        if(req.user.email !== email){
+            return res.status(403).send({message: 'Forbidden: Invalid token'})
+        }
         const result = await volunteerCollection.find(query).toArray();
         res.send(result);
     })
@@ -80,15 +132,18 @@ async function run() {
     })
 
     // get method with my volunteer request
-    app.get('/my-request/:email', async(req, res)=>{
+    app.get('/my-request/:email', verifyToken, async(req, res)=>{
         const email = req.params.email;
         const query = { volunteerEmail: email}
+        if(req.user.email !== email){
+            return res.status(403).send({message: 'Forbidden: Invalid token'})
+        }
         const result = await requestCollection.find(query).toArray();
         res.send(result);
     })
 
     // volunteer added post
-    app.post('/volunteers', async(req, res)=>{
+    app.post('/volunteers', verifyToken, async(req, res)=>{
         const volunteerData = req.body;
         const result = await volunteerCollection.insertOne(volunteerData);
         res.send(result);
@@ -106,7 +161,7 @@ async function run() {
     })
 
     // update volunteer post
-    app.put('/updatePost/:id', async(req, res)=>{
+    app.put('/updatePost/:id', verifyToken, async(req, res)=>{
         const id = req.params.id;
         const filter = {_id: new ObjectId(id)};
         const options = { upsert: true };
