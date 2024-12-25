@@ -79,6 +79,14 @@ async function run() {
         res.send(result);
     })
 
+    // get method with my volunteer request
+    app.get('/my-request/:email', async(req, res)=>{
+        const email = req.params.email;
+        const query = { volunteerEmail: email}
+        const result = await requestCollection.find(query).toArray();
+        res.send(result);
+    })
+
     // volunteer added post
     app.post('/volunteers', async(req, res)=>{
         const volunteerData = req.body;
@@ -123,6 +131,14 @@ async function run() {
         const id = req.params.id;
         const query = {_id: new ObjectId(id)};
         const result = await volunteerCollection.deleteOne(query);
+        res.send(result);
+    })
+
+    // My volunteer request delete
+    app.delete('/my-request/:id', async(req, res)=>{
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)};
+        const result = await requestCollection.deleteOne(query);
         res.send(result);
     })
 
