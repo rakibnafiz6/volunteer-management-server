@@ -29,6 +29,8 @@ async function run() {
     await client.connect();
 
     const volunteerCollection = client.db("volunteerManagement").collection('volunteer');
+
+    const requestCollection = client.db("volunteerManagement").collection('request');
     
     // all volunteer needs get method
     app.get('/volunteers', async(req, res)=>{
@@ -56,7 +58,7 @@ async function run() {
     // manage my volunteer post
     app.get('/manage-my-post/:email', async(req, res)=>{
         const email = req.params.email;
-        const query = {email};
+        const query = {organizer_email: email};
         const result = await volunteerCollection.find(query).toArray();
         res.send(result);
     })
@@ -69,10 +71,29 @@ async function run() {
         res.send(result);
     })
 
+    // get data with be a volunteer post
+    app.get('/volunteer/:id', async(req, res)=>{
+        const id = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const result = await volunteerCollection.findOne(query)
+        res.send(result);
+    })
+
     // volunteer added post
     app.post('/volunteers', async(req, res)=>{
         const volunteerData = req.body;
         const result = await volunteerCollection.insertOne(volunteerData);
+        res.send(result);
+    })
+
+    // volunteer request post
+    app.post('/request', async(req, res)=>{
+        const volunteerData = req.body;
+        const result = await requestCollection.insertOne(volunteerData);
+        // const filter = {_id: new ObjectId(volunteerData.id)}
+        // const update = { $inc: {volunteer: -1}}
+        // const updateVolunteerNo = await volunteerCollection.updateOne(filter, update)
+        // console.log(updateVolunteerNo);
         res.send(result);
     })
 
